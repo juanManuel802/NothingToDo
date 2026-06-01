@@ -33,7 +33,7 @@ public class PantallaEvaluarCalidad {
 
     private final SecctApp app;
 
-    private Lote loteSeleccionado;
+    private String loteSeleccionadoId;
 
     private ListView<String> listViewLotes;
     private Label lblLoteId;
@@ -139,11 +139,9 @@ public class PantallaEvaluarCalidad {
         grid.add(imagenBox, 1, 7);
 
         btnEvaluar = new Button("Evaluar unidad");
-        btnEvaluar.setDisable(true);
         btnEvaluar.setOnAction(e -> onEvaluarUnidad());
 
         btnCerrarEvaluacion = new Button("Cerrar evaluación del lote");
-        btnCerrarEvaluacion.setDisable(true);
         btnCerrarEvaluacion.setOnAction(e -> onCerrarEvaluacion());
 
         HBox botonesEval = new HBox(8, btnEvaluar, btnCerrarEvaluacion);
@@ -191,31 +189,16 @@ public class PantallaEvaluarCalidad {
 
     
     private void onSeleccionarLote() {
-        int idx = listViewLotes.getSelectionModel().getSelectedIndex();
-        if (idx < 0) {
-            mostrarMensaje("Seleccione un lote de la lista.");
-            return;
-        }
-
-        List<Lote> disponibles = app.listarLotesDisponibles();
-        if (idx >= disponibles.size()) return;
-
-        Lote candidato = disponibles.get(idx);
-        OperationResult result = app.seleccionarLote(candidato.getId());
-
+        String selected = listViewLotes.getSelectionModel().getSelectedItem();
+        String loteId = selected != null ? selected.split("  \\(")[0] : null;
+        OperationResult result = app.seleccionarLote(loteId);
         if (result.isSuccess()) {
-            loteSeleccionado = candidato;
-            actualizarInfoLote();
-            btnEvaluar.setDisable(false);
-            btnCerrarEvaluacion.setDisable(false);
-            mostrarMensaje(result.getMessage());
+            loteSeleccionadoId = loteId;
         } else {
-            loteSeleccionado = null;
-            btnEvaluar.setDisable(true);
-            btnCerrarEvaluacion.setDisable(true);
+            loteSeleccionadoId = null;
             limpiarInfoLote();
-            mostrarMensaje("No disponible: " + result.getMessage());
         }
+        mostrarMensaje(result.getMessage());
     }
 
     
@@ -235,68 +218,26 @@ public class PantallaEvaluarCalidad {
 
     
     private void onEvaluarUnidad() {
-        if (loteSeleccionado == null) {
-            mostrarMensaje("Seleccione un lote primero.");
-            return;
-        }
-        String rutaStr = txtRutaImagen.getText().trim();
-        if (rutaStr.isEmpty()) {
-            mostrarMensaje("Seleccione una imagen con el botón Examinar.");
-            return;
-        }
-
-        Path imagen = Paths.get(rutaStr);
-        OperationResult result = app.evaluarUnidad(loteSeleccionado.getId(), imagen);
-
+        Path imagen = Paths.get(txtRutaImagen.getText().trim());
+        OperationResult result = app.evaluarUnidad(loteSeleccionadoId, imagen);
         if (result.isSuccess()) {
             txtRutaImagen.clear();
-            actualizarInfoLote();
             cargarLotesEnLista();
-
-            String mensaje = result.getMessage();
-            if (!loteSeleccionado.estaDisponible()) {
-                btnEvaluar.setDisable(true);
-                mensaje += "\nLote ha alcanzado la cantidad comprometida de unidades.";
-            }
-            mostrarMensaje(mensaje);
-        } else {
-            mostrarMensaje("Error: " + result.getMessage());
         }
+        mostrarMensaje(result.getMessage());
     }
 
 
     private void onCerrarEvaluacion() {
-        if (loteSeleccionado == null) {
-            mostrarMensaje("Seleccione un lote primero.");
-            return;
-        }
-
-        OperationResult result = app.evaluarLote(loteSeleccionado.getId());
-
+        OperationResult result = app.evaluarLote(loteSeleccionadoId);
         if (result.isSuccess()) {
-            btnEvaluar.setDisable(true);
-            btnCerrarEvaluacion.setDisable(true);
-            actualizarInfoLote();
             cargarLotesEnLista();
-            mostrarMensaje(result.getMessage());
-        } else {
-            mostrarMensaje("Error: " + result.getMessage());
         }
+        mostrarMensaje(result.getMessage());
     }
 
-    
-    
-    
 
-    private void actualizarInfoLote() {
-        if (loteSeleccionado == null) return;
-        lblLoteId.setText(loteSeleccionado.getId());
-        lblEstado.setText(loteSeleccionado.getEstado().name());
-        lblProgreso.setText(loteSeleccionado.cantidadEvaluaciones()
-                + " / " + loteSeleccionado.getNumeroUnidadesMuestra());
-        double cf = loteSeleccionado.getClasificacionFinal();
-        lblClasificacion.setText(cf > 0.0 ? String.format(java.util.Locale.ROOT, "%.2f", cf) : "—");
-    }
+
 
     private void limpiarInfoLote() {
         lblLoteId.setText("—");

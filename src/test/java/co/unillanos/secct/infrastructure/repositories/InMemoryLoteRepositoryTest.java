@@ -147,15 +147,16 @@ class InMemoryLoteRepositoryTest {
 
     @Test
     void findByEstadoIn_shouldIncludeQuotaFullLoteIfStateMatches() {
-        // La cuota NO afecta este método; solo filtra por estado
+        // La cuota NO afecta este método; solo filtra por estado.
+        // Al completar la cuota, el estado auto-transiciona a EVALUADO.
         Lote atQuota = lote("LOTE-20250524-001", 1);
         atQuota.registrarEvaluacion(new Evaluacion("img.jpg", 3, atQuota));
-        // atQuota: EN_EVALUACION, 1/1 — cuota completa
+        // atQuota: EVALUADO, 1/1 — cuota completa
 
         InMemoryLoteRepository repo = new InMemoryLoteRepository(
                 Arrays.asList(atQuota));
 
-        List<Lote> resultado = repo.findByEstadoIn(EstadoLote.ABIERTO, EstadoLote.EN_EVALUACION);
+        List<Lote> resultado = repo.findByEstadoIn(EstadoLote.ABIERTO, EstadoLote.EVALUADO);
 
         assertEquals(1, resultado.size(),
                 "findByEstadoIn solo filtra por estado; la cuota la gestiona el use case.");

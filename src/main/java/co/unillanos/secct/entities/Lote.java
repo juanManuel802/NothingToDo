@@ -78,24 +78,23 @@ public class Lote {
         this.clasificacionFinal = 0.0;
     }
 
-    public void cerrarEvaluacion() {
-        if (estado != EstadoLote.EN_EVALUACION) {
+    public boolean estaEvaluado() {
+        return estado == EstadoLote.EVALUADO;
+    }
+
+    public void reportarEvaluacion() {
+        if (!estaEvaluado()) {
             throw new IllegalStateException(
                     "El lote '" + codigo.getValor()
-                            + "' debe estar en estado EN_EVALUACION para cerrar la evaluación (RN-020); estado actual: "
+                            + "' debe estar en estado EVALUADO para reportar la evaluación (RN-020); estado actual: "
                             + estado);
-        }
-        if (evaluaciones.isEmpty()) {
-            throw new IllegalStateException(
-                    "El lote '" + codigo.getValor()
-                            + "' debe tener al menos una evaluación registrada para cerrar (RN-021).");
         }
         double suma = 0.0;
         for (Evaluacion e : evaluaciones) {
             suma += e.getClasificacion();
         }
         this.clasificacionFinal = suma / evaluaciones.size();
-        this.estado = EstadoLote.EVALUADO;
+        this.estado = EstadoLote.REPORTADO;
     }
 
     public void registrarEvaluacion(Evaluacion evaluacion) {
@@ -115,6 +114,9 @@ public class Lote {
 
         if (esPrimeraEvaluacion && estado == EstadoLote.ABIERTO) {
             estado = EstadoLote.EN_EVALUACION;
+        }
+        if (evaluaciones.size() == numeroUnidadesMuestra) {
+            estado = EstadoLote.EVALUADO;
         }
     }
 

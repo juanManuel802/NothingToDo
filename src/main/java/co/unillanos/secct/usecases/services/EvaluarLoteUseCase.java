@@ -1,6 +1,5 @@
 package co.unillanos.secct.usecases.services;
 
-import co.unillanos.secct.entities.EstadoLote;
 import co.unillanos.secct.entities.Lote;
 import co.unillanos.secct.usecases.dto.OperationResult;
 import co.unillanos.secct.usecases.ports.LoteRepository;
@@ -26,22 +25,16 @@ public class EvaluarLoteUseCase {
 
         Lote lote = encontrado.get();
 
-        if (lote.getEstado() != EstadoLote.EN_EVALUACION) {
-            return OperationResult.fail(
-                    "El lote no se encuentra en estado de evaluación (estado actual: "
-                            + lote.getEstado() + ").");
+        try {
+            lote.reportarEvaluacion();
+        } catch (IllegalStateException e) {
+            return OperationResult.fail(e.getMessage());
         }
 
-        if (lote.cantidadEvaluaciones() == 0) {
-            return OperationResult.fail(
-                    "No es posible evaluar el lote. Debe tener al menos una unidad evaluada.");
-        }
-
-        lote.cerrarEvaluacion();
         loteRepository.save(lote);
 
         String clasificacionFormateada = String.format(Locale.ROOT, "%.2f", lote.getClasificacionFinal());
         return OperationResult.ok(
-                "Lote '" + loteId + "' evaluado. Clasificación: " + clasificacionFormateada + ".");
+                "Lote '" + loteId + "' reportado. Clasificación final: " + clasificacionFormateada + ".");
     }
 }

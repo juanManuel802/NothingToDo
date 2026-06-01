@@ -183,7 +183,8 @@ class SeleccionarLoteUseCaseTest {
     }
 
     @Test
-    void listarDisponibles_shouldIncludeQuotaFullLoteIfStateIsEN_EVALUACION() {
+    void listarDisponibles_shouldExcludeQuotaFullLoteBecauseStateIsEVALUADO() {
+        // Al completar la cuota, el estado pasa a EVALUADO → no aparece en disponibles
         Lote atQuota = lote("LOTA-20250524-001", 1);
         atQuota.registrarEvaluacion(new Evaluacion("img.jpg", 3, atQuota));
 
@@ -193,8 +194,8 @@ class SeleccionarLoteUseCaseTest {
 
         List<Lote> lista = uc.listarDisponibles();
 
-        assertEquals(2, lista.size(),
-                "Debe mostrar ambos lotes; la cuota se verifica al seleccionar, no al listar.");
+        assertEquals(1, lista.size(),
+                "El lote con cuota completa es EVALUADO y no aparece en disponibles.");
     }
 
     @Test

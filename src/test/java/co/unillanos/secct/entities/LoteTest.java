@@ -239,12 +239,21 @@ class LoteTest {
     }
 
     @Test
-    void shouldNotTransitionAgainOnSecondEvaluacion() {
+    void shouldNotTransitionToEVALUADOBeforeQuotaReached() {
         Lote lote = loteConCapacidad(5);
         lote.registrarEvaluacion(evaluacionPara(lote));
         assertEquals(EstadoLote.EN_EVALUACION, lote.getEstado());
         lote.registrarEvaluacion(evaluacionPara(lote));
         assertEquals(EstadoLote.EN_EVALUACION, lote.getEstado());
+    }
+
+    @Test
+    void shouldTransitionToEVALUADOWhenQuotaReached() {
+        Lote lote = loteConCapacidad(2);
+        lote.registrarEvaluacion(evaluacionPara(lote));
+        assertEquals(EstadoLote.EN_EVALUACION, lote.getEstado());
+        lote.registrarEvaluacion(evaluacionPara(lote));
+        assertEquals(EstadoLote.EVALUADO, lote.getEstado());
     }
 
     // ------- cantidadEvaluaciones -------
@@ -311,70 +320,71 @@ class LoteTest {
                 () -> lote.registrarEvaluacion(null));
     }
 
-    // ------- cerrarEvaluacion / RN-020 -------
+    // ------- reportarEvaluacion / RN-020 -------
 
     @Test
-    void shouldEnforceRN_020_TransitionEN_EVALUACION_to_EVALUADO() {
+    void shouldEnforceRN_020_TransitionEVALUADO_to_REPORTADO() {
+        Lote lote = loteConCapacidad(1);
+        lote.registrarEvaluacion(new Evaluacion("img-001.jpg", 3, lote));
+        assertEquals(EstadoLote.EVALUADO, lote.getEstado());
+
+        lote.reportarEvaluacion();
+
+        assertEquals(EstadoLote.REPORTADO, lote.getEstado());
+    }
+
+    @Test
+    void shouldEnforceRN_020_WhenLoteIsABIERTO_reportarEvaluacionThrows() {
+        Lote lote = loteConCapacidad(5);
+        assertEquals(EstadoLote.ABIERTO, lote.getEstado());
+
+        assertThrows(IllegalStateException.class, lote::reportarEvaluacion);
+    }
+
+    @Test
+    void shouldEnforceRN_020_WhenLoteIsEN_EVALUACION_reportarEvaluacionThrows() {
         Lote lote = loteConCapacidad(5);
         lote.registrarEvaluacion(new Evaluacion("img-001.jpg", 3, lote));
         assertEquals(EstadoLote.EN_EVALUACION, lote.getEstado());
 
-        lote.cerrarEvaluacion();
-
-        assertEquals(EstadoLote.EVALUADO, lote.getEstado());
+        assertThrows(IllegalStateException.class, lote::reportarEvaluacion);
     }
 
     @Test
-    void shouldEnforceRN_020_WhenLoteIsABIERTO_cerrarEvaluacionThrows() {
-        Lote lote = loteConCapacidad(5);
-        assertEquals(EstadoLote.ABIERTO, lote.getEstado());
-
-        assertThrows(IllegalStateException.class, lote::cerrarEvaluacion);
-    }
-
-    @Test
-    void shouldEnforceRN_020_WhenLoteIsAlreadyEVALUADO_cerrarEvaluacionThrows() {
-        Lote lote = loteConCapacidad(5);
+    void shouldEnforceRN_020_WhenLoteIsREPORTADO_reportarEvaluacionThrows() {
+        Lote lote = loteConCapacidad(1);
         lote.registrarEvaluacion(new Evaluacion("img-001.jpg", 3, lote));
-        lote.cerrarEvaluacion();
+        lote.reportarEvaluacion();
 
-        assertThrows(IllegalStateException.class, lote::cerrarEvaluacion);
+        assertThrows(IllegalStateException.class, lote::reportarEvaluacion);
     }
 
-    // ------- cerrarEvaluacion / RN-021 -------
-
-    @Test
-    void shouldEnforceRN_021_WhenNoEvaluaciones_cerrarEvaluacionThrows() throws Exception {
-        Lote lote = loteConCapacidad(5);
-        forzarEstado(lote, EstadoLote.EN_EVALUACION);
-
-        assertThrows(IllegalStateException.class, lote::cerrarEvaluacion);
-    }
+    // ------- reportarEvaluacion / RN-021 -------
 
     @Test
     void shouldEnforceRN_021_ClasificacionFinalIsArithmeticAverage() {
-        Lote lote = loteConCapacidad(5);
+        Lote lote = loteConCapacidad(3);
         lote.registrarEvaluacion(new Evaluacion("img-001.jpg", 3, lote));
         lote.registrarEvaluacion(new Evaluacion("img-002.jpg", 4, lote));
         lote.registrarEvaluacion(new Evaluacion("img-003.jpg", 2, lote));
 
-        lote.cerrarEvaluacion();
+        lote.reportarEvaluacion();
 
         assertEquals(3.0, lote.getClasificacionFinal(), 0.001);
     }
 
     @Test
     void shouldEnforceRN_021_ClasificacionFinalWithSingleEvaluacion() {
-        Lote lote = loteConCapacidad(5);
+        Lote lote = loteConCapacidad(1);
         lote.registrarEvaluacion(new Evaluacion("img-001.jpg", 5, lote));
 
-        lote.cerrarEvaluacion();
+        lote.reportarEvaluacion();
 
         assertEquals(5.0, lote.getClasificacionFinal(), 0.001);
     }
 
     @Test
-    void clasificacionFinal_shouldBeZeroBeforeCerrarEvaluacion() {
+    void clasificacionFinal_shouldBeZeroBeforeReportarEvaluacion() {
         Lote lote = loteConCapacidad(5);
         assertEquals(0.0, lote.getClasificacionFinal(), 0.001);
     }

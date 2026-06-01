@@ -32,6 +32,7 @@ class EvaluarLoteUseCaseTest {
                 "");
     }
 
+    // Crea un lote con capacidad == categorias.length, llenando la cuota → estado EVALUADO
     private Lote loteEnEvaluacion(String codigoStr, int... categorias) {
         Lote l = lote(codigoStr, Math.max(categorias.length, 1));
         for (int i = 0; i < categorias.length; i++) {
@@ -48,14 +49,14 @@ class EvaluarLoteUseCaseTest {
     // ------- flujo normal -------
 
     @Test
-    void shouldReturnOkAndTransitionToEVALUADOWhenLoteEnEvaluacion() {
+    void shouldReturnOkAndTransitionToREPORTADOWhenLoteEvaluado() {
         Lote l = loteEnEvaluacion("LOTE-20250524-001", 3, 4, 2);
         EvaluarLoteUseCase uc = ucConLote(l);
 
         OperationResult result = uc.execute("LOTE-20250524-001");
 
         assertTrue(result.isSuccess());
-        assertEquals(EstadoLote.EVALUADO, l.getEstado());
+        assertEquals(EstadoLote.REPORTADO, l.getEstado());
     }
 
     @Test
@@ -81,7 +82,7 @@ class EvaluarLoteUseCaseTest {
     }
 
     @Test
-    void shouldPersistEvaluadoStateAfterExecution() {
+    void shouldPersistReportadoStateAfterExecution() {
         InMemoryLoteRepository repo = new InMemoryLoteRepository();
         Lote l = loteEnEvaluacion("LOTE-20250524-004", 3);
         repo.save(l);
@@ -90,43 +91,39 @@ class EvaluarLoteUseCaseTest {
         uc.execute("LOTE-20250524-004");
 
         Lote persistido = repo.findById("LOTE-20250524-004").orElseThrow();
-        assertEquals(EstadoLote.EVALUADO, persistido.getEstado());
+        assertEquals(EstadoLote.REPORTADO, persistido.getEstado());
         assertTrue(persistido.getClasificacionFinal() > 0.0);
     }
 
-    // ------- escenario alternativo A: sin evaluaciones -------
+    // ------- escenario alternativo A: cuota no completada -------
 
     @Test
-    void shouldReturnFailWhenLoteHasNoEvaluaciones() throws Exception {
+    void shouldReturnFailWhenLoteIsNotEvaluado() {
         Lote l = lote("LOTE-20250524-005", 5);
-        java.lang.reflect.Field campo = Lote.class.getDeclaredField("estado");
-        campo.setAccessible(true);
-        campo.set(l, EstadoLote.EN_EVALUACION);
         EvaluarLoteUseCase uc = ucConLote(l);
 
         OperationResult result = uc.execute("LOTE-20250524-005");
 
         assertFalse(result.isSuccess());
-        assertTrue(result.getMessage().contains("al menos una unidad evaluada"));
     }
 
-    // ------- escenario alternativo B: estado no evaluable -------
-
     @Test
-    void shouldReturnFailWhenLoteIsABIERTO() {
+    void shouldReturnFailWhenLoteIsEN_EVALUACION() {
         Lote l = lote("LOTE-20250524-006", 5);
+        l.registrarEvaluacion(new Evaluacion("img-001.jpg", 3, l));
         EvaluarLoteUseCase uc = ucConLote(l);
 
         OperationResult result = uc.execute("LOTE-20250524-006");
 
         assertFalse(result.isSuccess());
-        assertTrue(result.getMessage().contains("estado de evaluación"));
     }
 
+    // ------- escenario alternativo B: ya reportado -------
+
     @Test
-    void shouldReturnFailWhenLoteIsAlreadyEVALUADO() {
+    void shouldReturnFailWhenLoteIsAlreadyREPORTADO() {
         Lote l = loteEnEvaluacion("LOTE-20250524-007", 4);
-        l.cerrarEvaluacion();
+        l.reportarEvaluacion();
         EvaluarLoteUseCase uc = ucConLote(l);
 
         OperationResult result = uc.execute("LOTE-20250524-007");

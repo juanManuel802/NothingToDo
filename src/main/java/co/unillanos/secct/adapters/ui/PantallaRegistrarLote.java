@@ -234,19 +234,6 @@ public class PantallaRegistrarLote {
         LocalDate fecha  = dpFecha.getValue();
         PuntoEvaluacion punto = cmbPunto.getValue();
 
-        if (estacion.isEmpty()) {
-            mostrarMensaje("La estación de origen es obligatoria (RN-002).");
-            return;
-        }
-        if (fecha == null) {
-            mostrarMensaje("Seleccione una fecha de captura (RN-003).");
-            return;
-        }
-        if (punto == null) {
-            mostrarMensaje("Seleccione el punto de evaluación (RN-006).");
-            return;
-        }
-
         BigDecimal peso;
         try {
             peso = new BigDecimal(txtPeso.getText().trim().replace(",", "."));
@@ -269,7 +256,7 @@ public class PantallaRegistrarLote {
                 fecha,
                 peso,
                 numUnidades,
-                punto.name(),
+                punto != null ? punto.name() : "",
                 taObservaciones.getText().trim()));
 
         mostrarMensaje(result.getMessage());

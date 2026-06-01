@@ -188,7 +188,8 @@ class SecctAppTest {
     }
 
     @Test
-    void listarLotesDisponibles_shouldReturnAllLotesByStateIncludingAtQuota() {
+    void listarLotesDisponibles_shouldExcludeQuotaFullLoteBecauseStateIsEVALUADO() {
+        // Al completar la cuota, el estado pasa a EVALUADO → no aparece en disponibles
         Lote disponible = lote("LOTA-20250524-001", 5);
         Lote agotado    = lote("LOTB-20250524-001", 1);
         agotado.registrarEvaluacion(new Evaluacion("img.jpg", 3, agotado));
@@ -200,8 +201,8 @@ class SecctAppTest {
 
         List<Lote> lista = app.listarLotesDisponibles();
 
-        assertEquals(2, lista.size(),
-                "Ambos lotes deben aparecer: el listado filtra por estado, no por cuota.");
+        assertEquals(1, lista.size(),
+                "El lote con cuota completa es EVALUADO y no aparece en disponibles.");
     }
 
     // ------- seleccionarLote (CU-002) -------
@@ -346,15 +347,15 @@ class SecctAppTest {
     // ------- evaluarLote (CU-004) -------
 
     @Test
-    void evaluarLote_shouldReturnOkAndTransitionToEVALUADO() {
-        Lote l = lote("LOTE-20250524-010", 5);
+    void evaluarLote_shouldReturnOkAndTransitionToREPORTADO() {
+        Lote l = lote("LOTE-20250524-010", 1);
         l.registrarEvaluacion(new Evaluacion("img.jpg", 3, l));
         SecctApp app = appConLote(l);
 
         OperationResult result = app.evaluarLote("LOTE-20250524-010");
 
         assertTrue(result.isSuccess());
-        assertEquals(EstadoLote.EVALUADO, l.getEstado());
+        assertEquals(EstadoLote.REPORTADO, l.getEstado());
     }
 
     @Test
@@ -404,7 +405,7 @@ class SecctAppTest {
                 .filter(l -> l.getId().equals(codigo.getValor()))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Lote evaluado no encontrado en el repositorio."));
-        assertEquals(EstadoLote.EVALUADO, lote.getEstado());
+        assertEquals(EstadoLote.REPORTADO, lote.getEstado());
         assertTrue(lote.getClasificacionFinal() > 0.0);
     }
 }
