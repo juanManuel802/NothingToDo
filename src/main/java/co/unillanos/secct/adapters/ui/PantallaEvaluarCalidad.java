@@ -194,6 +194,7 @@ public class PantallaEvaluarCalidad {
         OperationResult result = app.seleccionarLote(loteId);
         if (result.isSuccess()) {
             loteSeleccionadoId = loteId;
+            mostrarInfoLote(buscarLote(loteSeleccionadoId));
         } else {
             loteSeleccionadoId = null;
             limpiarInfoLote();
@@ -223,6 +224,7 @@ public class PantallaEvaluarCalidad {
         if (result.isSuccess()) {
             txtRutaImagen.clear();
             cargarLotesEnLista();
+            mostrarInfoLote(buscarLote(loteSeleccionadoId));
         }
         mostrarMensaje(result.getMessage());
     }
@@ -232,12 +234,44 @@ public class PantallaEvaluarCalidad {
         OperationResult result = app.evaluarLote(loteSeleccionadoId);
         if (result.isSuccess()) {
             cargarLotesEnLista();
+            mostrarInfoLote(buscarLote(loteSeleccionadoId));
         }
         mostrarMensaje(result.getMessage());
     }
 
 
 
+
+    private Lote buscarLote(String loteId) {
+        if (loteId == null) return null;
+        for (Lote lote : app.listarLotesDisponibles()) {
+            if (lote.getId().equals(loteId)) return lote;
+        }
+        for (Lote lote : app.listarLotesEvaluados()) {
+            if (lote.getId().equals(loteId)) return lote;
+        }
+        return null;
+    }
+
+    private void mostrarInfoLote(Lote lote) {
+        if (lote == null) { limpiarInfoLote(); return; }
+        lblLoteId.setText(lote.getId());
+        lblEstado.setText(formatearEstado(lote.getEstado().name()));
+        lblProgreso.setText(lote.cantidadEvaluaciones() + " / " + lote.getNumeroUnidadesMuestra());
+        lblClasificacion.setText(lote.getClasificacionFinal() > 0.0
+                ? String.format("%.2f", lote.getClasificacionFinal())
+                : "—");
+    }
+
+    private String formatearEstado(String estado) {
+        switch (estado) {
+            case "ABIERTO":       return "Abierto";
+            case "EN_EVALUACION": return "En evaluación";
+            case "EVALUADO":      return "Evaluado";
+            case "REPORTADO":     return "Reportado";
+            default:              return estado;
+        }
+    }
 
     private void limpiarInfoLote() {
         lblLoteId.setText("—");
