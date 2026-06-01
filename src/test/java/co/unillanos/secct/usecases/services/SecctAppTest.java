@@ -1,9 +1,9 @@
 package co.unillanos.secct.usecases.services;
 
 import co.unillanos.secct.adapters.ui.InicializadorDatos;
-import co.unillanos.secct.entities.CodigoLote;
 import co.unillanos.secct.entities.EstadoLote;
 import co.unillanos.secct.entities.Evaluacion;
+import co.unillanos.secct.entities.CodigoLote;
 import co.unillanos.secct.entities.FechaCaptura;
 import co.unillanos.secct.entities.Lote;
 import co.unillanos.secct.entities.PesoLote;
@@ -73,15 +73,10 @@ class SecctAppTest {
     }
 
     @Test
-    void shouldSeedCorrectLoteIdsOnDefaultConstruction() {
+    void shouldSeedLotesWithNonEmptyIds() {
         SecctApp app = appConSeed();
 
-        List<Lote> disponibles = app.listarLotesDisponibles();
-
-        assertTrue(disponibles.stream()
-                .anyMatch(l -> l.getId().equals("ESTMETA-20250524-001")));
-        assertTrue(disponibles.stream()
-                .anyMatch(l -> l.getId().equals("ESTMETA-20250523-001")));
+        app.listarLotesDisponibles().forEach(l -> assertFalse(l.getId().isBlank()));
     }
 
     @Test
@@ -95,23 +90,10 @@ class SecctAppTest {
     // ------- registrarLote (CU-001) -------
 
     @Test
-    void obtenerCodigoNuevoLote_shouldReturnValidCodigoLote() {
-        SecctApp app = appConRepoVacio();
-
-        CodigoLote codigo = app.obtenerCodigoNuevoLote();
-
-        assertNotNull(codigo);
-        assertNotNull(codigo.getValor());
-        assertFalse(codigo.getValor().isBlank());
-    }
-
-    @Test
     void registrarLote_shouldReturnOkWhenDataIsValid() {
         SecctApp app = appConRepoVacio();
-        CodigoLote codigo = app.obtenerCodigoNuevoLote();
 
         OperationResult result = app.registrarLote(new DatosNuevoLote(
-                codigo.getValor(),
                 "Estacion Piscicola Arauca",
                 LocalDate.now(),
                 new BigDecimal("75.50"),
@@ -120,16 +102,13 @@ class SecctAppTest {
                 ""));
 
         assertTrue(result.isSuccess());
-        assertTrue(result.getMessage().contains(codigo.getValor()));
     }
 
     @Test
     void registrarLote_shouldPersistLoteAfterRegistration() {
         SecctApp app = appConRepoVacio();
-        CodigoLote codigo = app.obtenerCodigoNuevoLote();
 
         app.registrarLote(new DatosNuevoLote(
-                codigo.getValor(),
                 "Estacion Piscicola Meta",
                 LocalDate.now(),
                 PESO,
@@ -137,29 +116,7 @@ class SecctAppTest {
                 "ESTACION_PISCICOLA",
                 ""));
 
-        List<Lote> lista = app.listarLotesDisponibles();
-        assertTrue(lista.stream().anyMatch(l -> l.getId().equals(codigo.getValor())),
-                "El lote registrado debe aparecer en el listado.");
-    }
-
-    @Test
-    void registrarLote_shouldReturnFailForDuplicateCodigo() {
-        SecctApp app = appConRepoVacio();
-        CodigoLote codigo = app.obtenerCodigoNuevoLote();
-        DatosNuevoLote datos = new DatosNuevoLote(
-                codigo.getValor(),
-                "Estacion Meta",
-                LocalDate.now(),
-                PESO,
-                5,
-                "ESTACION_PISCICOLA",
-                "");
-
-        app.registrarLote(datos);
-        OperationResult duplicado = app.registrarLote(datos);
-
-        assertFalse(duplicado.isSuccess());
-        assertTrue(duplicado.getMessage().contains(codigo.getValor()));
+        assertEquals(1, app.listarLotesDisponibles().size());
     }
 
     @Test
@@ -167,8 +124,7 @@ class SecctAppTest {
         SecctApp app = appConRepoVacio();
 
         OperationResult result = app.registrarLote(new DatosNuevoLote(
-                "codigo-invalido",
-                "Estacion Meta",
+                "",
                 LocalDate.now(),
                 PESO,
                 5,
@@ -269,11 +225,7 @@ class SecctAppTest {
     void shouldIntegrateFullCU001Flow() {
         SecctApp app = appConRepoVacio();
 
-        CodigoLote codigo = app.obtenerCodigoNuevoLote();
-        assertNotNull(codigo);
-
         OperationResult registro = app.registrarLote(new DatosNuevoLote(
-                codigo.getValor(),
                 "Estacion Piscicola Arauca",
                 LocalDate.now(),
                 new BigDecimal("60.00"),
@@ -284,17 +236,19 @@ class SecctAppTest {
 
         List<Lote> lista = app.listarLotesDisponibles();
         assertEquals(1, lista.size());
-        assertEquals(codigo.getValor(), lista.get(0).getId());
         assertEquals(EstadoLote.ABIERTO, lista.get(0).getEstado());
     }
 
     @Test
     void shouldIntegrateFullFlowListSelectAndEvaluateMultipleTimes() {
         SecctApp app = appConSeed();
-        String loteId = "ESTMETA-20250524-001";
 
         List<Lote> disponibles = app.listarLotesDisponibles();
         assertEquals(2, disponibles.size());
+
+        String loteId = disponibles.stream()
+                .filter(l -> l.getNumeroUnidadesMuestra() == 15)
+                .findFirst().orElseThrow().getId();
 
         OperationResult seleccion = app.seleccionarLote(loteId);
         assertTrue(seleccion.isSuccess());
@@ -318,26 +272,25 @@ class SecctAppTest {
     void shouldIntegrateRegistroYEvaluacionEndToEnd() {
         SecctApp app = appConRepoVacio();
 
-        CodigoLote codigo = app.obtenerCodigoNuevoLote();
         app.registrarLote(new DatosNuevoLote(
-                codigo.getValor(),
                 "Estacion Piscicola Meta",
                 LocalDate.now(),
                 new BigDecimal("80.00"),
                 3,
                 "PLAZA_MERCADO",
                 ""));
+        String loteId = app.listarLotesDisponibles().get(0).getId();
 
-        OperationResult seleccion = app.seleccionarLote(codigo.getValor());
+        OperationResult seleccion = app.seleccionarLote(loteId);
         assertTrue(seleccion.isSuccess());
 
-        OperationResult eval1 = app.evaluarUnidad(codigo.getValor(), Paths.get("pez1.jpg"));
-        OperationResult eval2 = app.evaluarUnidad(codigo.getValor(), Paths.get("pez2.jpg"));
+        OperationResult eval1 = app.evaluarUnidad(loteId, Paths.get("pez1.jpg"));
+        OperationResult eval2 = app.evaluarUnidad(loteId, Paths.get("pez2.jpg"));
         assertTrue(eval1.isSuccess());
         assertTrue(eval2.isSuccess());
 
         Lote lote = app.listarLotesDisponibles().stream()
-                .filter(l -> l.getId().equals(codigo.getValor()))
+                .filter(l -> l.getId().equals(loteId))
                 .findFirst()
                 .orElseThrow();
         assertEquals(EstadoLote.EN_EVALUACION, lote.getEstado());
@@ -381,28 +334,27 @@ class SecctAppTest {
     void shouldIntegrateFullCU001ToCU004Flow() {
         SecctApp app = appConRepoVacio();
 
-        CodigoLote codigo = app.obtenerCodigoNuevoLote();
         app.registrarLote(new DatosNuevoLote(
-                codigo.getValor(),
                 "Estacion Piscicola Meta",
                 LocalDate.now(),
                 new BigDecimal("60.00"),
                 3,
                 "ESTACION_PISCICOLA",
                 ""));
+        String loteId = app.listarLotesDisponibles().get(0).getId();
 
-        app.seleccionarLote(codigo.getValor());
-        app.evaluarUnidad(codigo.getValor(), Paths.get("p1.jpg"));
-        app.evaluarUnidad(codigo.getValor(), Paths.get("p2.jpg"));
-        app.evaluarUnidad(codigo.getValor(), Paths.get("p3.jpg"));
+        app.seleccionarLote(loteId);
+        app.evaluarUnidad(loteId, Paths.get("p1.jpg"));
+        app.evaluarUnidad(loteId, Paths.get("p2.jpg"));
+        app.evaluarUnidad(loteId, Paths.get("p3.jpg"));
 
-        OperationResult resultado = app.evaluarLote(codigo.getValor());
+        OperationResult resultado = app.evaluarLote(loteId);
 
         assertTrue(resultado.isSuccess());
-        assertTrue(resultado.getMessage().contains(codigo.getValor()));
+        assertTrue(resultado.getMessage().contains(loteId));
 
         Lote lote = app.listarLotesEvaluados().stream()
-                .filter(l -> l.getId().equals(codigo.getValor()))
+                .filter(l -> l.getId().equals(loteId))
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("Lote evaluado no encontrado en el repositorio."));
         assertEquals(EstadoLote.REPORTADO, lote.getEstado());

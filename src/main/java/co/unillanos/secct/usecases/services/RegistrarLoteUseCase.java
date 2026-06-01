@@ -21,21 +21,12 @@ public class RegistrarLoteUseCase {
         this.generadorCodigoLote = generadorCodigoLote;
     }
 
-    public CodigoLote obtenerCodigoNuevoLote() {
-        return generadorCodigoLote.generarCodigoLote();
-    }
-
     public OperationResult execute(DatosNuevoLote datos) {
         CodigoLote codigo;
         try {
-            codigo = new CodigoLote(datos.getCodigo());
-        } catch (IllegalArgumentException e) {
+            codigo = generadorCodigoLote.generarCodigoLote();
+        } catch (IllegalStateException e) {
             return OperationResult.fail(e.getMessage());
-        }
-
-        if (loteRepository.existsByCodigo(codigo)) {
-            return OperationResult.fail(
-                    "Ya existe un lote con el código '" + codigo.getValor() + "' (RN-001).");
         }
 
         FechaCaptura fechaCaptura;

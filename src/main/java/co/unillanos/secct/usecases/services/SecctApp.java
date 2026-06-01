@@ -1,6 +1,5 @@
 package co.unillanos.secct.usecases.services;
 
-import co.unillanos.secct.entities.CodigoLote;
 import co.unillanos.secct.entities.Lote;
 import co.unillanos.secct.usecases.dto.DatosNuevoLote;
 import co.unillanos.secct.usecases.dto.OperationResult;
@@ -31,10 +30,6 @@ public class SecctApp {
 
 
     // --- CU-001 Registrar Lote ---
-
-    public CodigoLote obtenerCodigoNuevoLote() {
-        return registrarLoteUseCase.obtenerCodigoNuevoLote();
-    }
 
     public OperationResult registrarLote(DatosNuevoLote datos) {
         return registrarLoteUseCase.execute(datos);

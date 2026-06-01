@@ -1,6 +1,5 @@
 package co.unillanos.secct.adapters.ui;
 
-import co.unillanos.secct.entities.CodigoLote;
 import co.unillanos.secct.entities.PuntoEvaluacion;
 import co.unillanos.secct.usecases.dto.DatosNuevoLote;
 import co.unillanos.secct.usecases.dto.OperationResult;
@@ -38,7 +37,6 @@ public class PantallaRegistrarLote {
 
     private final SecctApp app;
 
-    private TextField txtCodigo;
     private TextField txtEstacion;
     private DatePicker dpFecha;
     private TextField txtPeso;
@@ -76,23 +74,6 @@ public class PantallaRegistrarLote {
         grid.setVgap(8);
 
         int row = 0;
-
-        // --- Sección: código ---
-        Label lblCodSec = new Label("Código del lote");
-        lblCodSec.setFont(Font.font("System", FontWeight.BOLD, 13));
-        grid.add(lblCodSec, 0, row++, 2, 1);
-
-        grid.add(new Label("Código:"), 0, row);
-        txtCodigo = new TextField();
-        txtCodigo.setEditable(false);
-        txtCodigo.setStyle("-fx-background-color: #f4f4f4;");
-        Button btnNuevoCodigo = new Button("Nuevo código");
-        btnNuevoCodigo.setOnAction(e -> generarNuevoCodigo());
-        HBox codBox = new HBox(8, txtCodigo, btnNuevoCodigo);
-        HBox.setHgrow(txtCodigo, Priority.ALWAYS);
-        grid.add(codBox, 1, row++);
-
-        grid.add(new Separator(), 0, row++, 2, 1);
 
         // --- Sección: datos del lote ---
         Label lblDatosSec = new Label("Datos del lote");
@@ -214,20 +195,9 @@ public class PantallaRegistrarLote {
     private void inicializarFormulario() {
         dpFecha.setValue(LocalDate.now());
         cmbPunto.getSelectionModel().selectFirst();
-        generarNuevoCodigo();
     }
 
     // ------- manejadores de eventos -------
-
-    private void generarNuevoCodigo() {
-        try {
-            CodigoLote codigo = app.obtenerCodigoNuevoLote();
-            txtCodigo.setText(codigo.getValor());
-        } catch (IllegalStateException e) {
-            txtCodigo.setText("Límite alcanzado");
-            mostrarMensaje("El generador de códigos ha alcanzado su límite. Reinicie la aplicación.");
-        }
-    }
 
     private void onGuardarLote() {
         String estacion = txtEstacion.getText().trim();
@@ -251,7 +221,6 @@ public class PantallaRegistrarLote {
         }
 
         OperationResult result = app.registrarLote(new DatosNuevoLote(
-                txtCodigo.getText().trim(),
                 estacion,
                 fecha,
                 peso,
@@ -263,7 +232,6 @@ public class PantallaRegistrarLote {
 
         if (result.isSuccess()) {
             limpiarCampos();
-            generarNuevoCodigo();
         }
     }
 
