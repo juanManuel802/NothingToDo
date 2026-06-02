@@ -7,7 +7,6 @@ import co.unillanos.secct.usecases.dto.ResultadoClasificacion;
 import co.unillanos.secct.usecases.ports.ClasificadorCnnPort;
 import co.unillanos.secct.usecases.ports.LoteRepository;
 
-import java.nio.file.Path;
 import java.util.Optional;
 
 
@@ -16,15 +15,17 @@ public class EvaluarUnidadUseCase {
     private final LoteRepository loteRepository;
     private final ClasificadorCnnPort clasificador;
 
-    
     public EvaluarUnidadUseCase(LoteRepository loteRepository,
                                 ClasificadorCnnPort clasificador) {
         this.loteRepository = loteRepository;
         this.clasificador = clasificador;
     }
 
-    
-    public OperationResult execute(String loteId, Path imagen) {
+    public OperationResult execute(String loteId, String nombreImagen, byte[] imagen) {
+        if (nombreImagen == null || nombreImagen.isBlank()) {
+            return OperationResult.fail("El nombre de la imagen no puede estar vacío.");
+        }
+
         Optional<Lote> encontrado = loteRepository.findById(loteId);
 
         if (!encontrado.isPresent()) {
@@ -43,16 +44,12 @@ public class EvaluarUnidadUseCase {
 
         ResultadoClasificacion resultado = clasificador.clasificar(imagen);
 
-        String idImagen = imagen.getFileName() != null
-                ? imagen.getFileName().toString()
-                : imagen.toString();
-
-        Evaluacion evaluacion = new Evaluacion(idImagen, resultado.getCategoriaNtc(), lote);
+        Evaluacion evaluacion = new Evaluacion(nombreImagen, resultado.getCategoriaNtc(), lote);
         lote.registrarEvaluacion(evaluacion);
         loteRepository.save(lote);
 
         return OperationResult.ok(
-                "Unidad evaluada. Imagen: " + idImagen
+                "Unidad evaluada. Imagen: " + nombreImagen
                         + ". Categoría NTC: " + resultado.getCategoriaNtc()
                         + ". Confianza: " + resultado.getPuntajeConfianza()
                         + ". Evaluadas: " + lote.cantidadEvaluaciones()

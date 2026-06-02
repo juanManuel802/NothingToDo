@@ -16,8 +16,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
@@ -83,9 +81,9 @@ class EvaluarUnidadUseCaseTest {
     }
 
     private static class CapturingClasificador implements ClasificadorCnnPort {
-        Path imagenRecibida = null;
+        byte[] imagenRecibida = null;
 
-        public ResultadoClasificacion clasificar(Path imagen) {
+        public ResultadoClasificacion clasificar(byte[] imagen) {
             this.imagenRecibida = imagen;
             return new ResultadoClasificacion(3, 0.9);
         }
@@ -105,7 +103,7 @@ class EvaluarUnidadUseCaseTest {
                 repoVacio(), clasificadorFijo(3, 0.8));
 
         OperationResult result = uc.execute("ID-INEXISTENTE",
-                Paths.get("tilapia_001.jpg"));
+                "tilapia_001.jpg", new byte[0]);
 
         assertFalse(result.isSuccess());
         assertTrue(result.getMessage().contains("ID-INEXISTENTE"));
@@ -120,7 +118,7 @@ class EvaluarUnidadUseCaseTest {
         EvaluarUnidadUseCase uc = new EvaluarUnidadUseCase(
                 repo, clasificadorFijo(3, 0.8));
 
-        OperationResult result = uc.execute("LOTE-20250524-001", Paths.get("nueva.jpg"));
+        OperationResult result = uc.execute("LOTE-20250524-001", "nueva.jpg", new byte[0]);
 
         assertFalse(result.isSuccess());
         assertNull(repo.loteGuardado, "No debe persistir cuando el lote no está disponible.");
@@ -135,7 +133,7 @@ class EvaluarUnidadUseCaseTest {
         EvaluarUnidadUseCase uc = new EvaluarUnidadUseCase(
                 repo, clasificadorFijo(3, 0.8));
 
-        OperationResult result = uc.execute("LOTE-20250524-002", Paths.get("img.jpg"));
+        OperationResult result = uc.execute("LOTE-20250524-002", "img.jpg", new byte[0]);
 
         assertFalse(result.isSuccess());
         assertNull(repo.loteGuardado);
@@ -149,7 +147,7 @@ class EvaluarUnidadUseCaseTest {
                 repo, clasificadorFijo(4, 0.95));
 
         OperationResult result = uc.execute("LOTE-20250524-003",
-                Paths.get("tilapia_001.jpg"));
+                "tilapia_001.jpg", new byte[0]);
 
         assertTrue(result.isSuccess());
         assertSame(l, repo.loteGuardado, "Debe persistir el mismo lote.");
@@ -162,7 +160,7 @@ class EvaluarUnidadUseCaseTest {
         EvaluarUnidadUseCase uc = new EvaluarUnidadUseCase(
                 new CapturingLoteRepository(l), clasificadorFijo(2, 0.75));
 
-        OperationResult result = uc.execute("LOTE-20250524-004", Paths.get("img.jpg"));
+        OperationResult result = uc.execute("LOTE-20250524-004", "img.jpg", new byte[0]);
 
         assertTrue(result.getMessage().contains("2"));
     }
@@ -173,11 +171,11 @@ class EvaluarUnidadUseCaseTest {
         CapturingClasificador cnn = new CapturingClasificador();
         EvaluarUnidadUseCase uc = new EvaluarUnidadUseCase(
                 new CapturingLoteRepository(l), cnn);
-        Path imagen = Paths.get("fotos", "tilapia_007.jpg");
+        byte[] imagen = new byte[]{1, 2, 3};
 
-        uc.execute("LOTE-20250524-005", imagen);
+        uc.execute("LOTE-20250524-005", "tilapia_007.jpg", imagen);
 
-        assertEquals(imagen, cnn.imagenRecibida);
+        assertSame(imagen, cnn.imagenRecibida);
     }
 
     @Test
@@ -188,7 +186,7 @@ class EvaluarUnidadUseCaseTest {
         EvaluarUnidadUseCase uc = new EvaluarUnidadUseCase(
                 new CapturingLoteRepository(l), clasificadorFijo(3, 0.8));
 
-        uc.execute("LOTE-20250524-006", Paths.get("img.jpg"));
+        uc.execute("LOTE-20250524-006", "img.jpg", new byte[0]);
 
         assertEquals(EstadoLote.EN_EVALUACION, l.getEstado());
     }
@@ -200,9 +198,9 @@ class EvaluarUnidadUseCaseTest {
         EvaluarUnidadUseCase uc = new EvaluarUnidadUseCase(
                 repo, clasificadorFijo(1, 0.6));
 
-        uc.execute("LOTE-20250524-007", Paths.get("img-1.jpg"));
-        uc.execute("LOTE-20250524-007", Paths.get("img-2.jpg"));
-        uc.execute("LOTE-20250524-007", Paths.get("img-3.jpg"));
+        uc.execute("LOTE-20250524-007", "img-1.jpg", new byte[0]);
+        uc.execute("LOTE-20250524-007", "img-2.jpg", new byte[0]);
+        uc.execute("LOTE-20250524-007", "img-3.jpg", new byte[0]);
 
         assertEquals(3, l.cantidadEvaluaciones());
     }
@@ -214,7 +212,7 @@ class EvaluarUnidadUseCaseTest {
         EvaluarUnidadUseCase uc = new EvaluarUnidadUseCase(
                 repo, clasificadorFijo(5, 1.0));
 
-        uc.execute("LOTE-20250524-008", Paths.get("fotos", "captura_final.jpg"));
+        uc.execute("LOTE-20250524-008", "captura_final.jpg", new byte[0]);
 
         Evaluacion evaluacion = l.getEvaluaciones().get(0);
         assertEquals("captura_final.jpg", evaluacion.getIdImagen());

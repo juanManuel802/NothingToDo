@@ -3,9 +3,6 @@ package co.unillanos.secct.infrastructure.repositories;
 import co.unillanos.secct.usecases.dto.ResultadoClasificacion;
 import co.unillanos.secct.usecases.ports.ClasificadorCnnPort;
 
-import java.nio.file.Path;
-
-
 public class FakeClasificadorCnn implements ClasificadorCnnPort {
 
     
@@ -21,16 +18,13 @@ public class FakeClasificadorCnn implements ClasificadorCnnPort {
 
     
     public FakeClasificadorCnn(int categoriaNtc, double puntajeConfianza) {
-        
-        
-        new ResultadoClasificacion(categoriaNtc, puntajeConfianza);
         this.categoriaNtc = categoriaNtc;
         this.puntajeConfianza = puntajeConfianza;
     }
 
     
     @Override
-    public ResultadoClasificacion clasificar(Path imagen) {
+    public ResultadoClasificacion clasificar(byte[] imagen) {
         return new ResultadoClasificacion(categoriaNtc, puntajeConfianza);
     }
 }

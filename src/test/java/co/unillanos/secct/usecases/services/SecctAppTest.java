@@ -16,7 +16,6 @@ import co.unillanos.secct.usecases.dto.OperationResult;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
@@ -203,7 +202,7 @@ class SecctAppTest {
         SecctApp app = appConLote(l);
 
         OperationResult result = app.evaluarUnidad("LOTE-20250524-003",
-                Paths.get("tilapia_001.jpg"));
+                "tilapia_001.jpg", new byte[0]);
 
         assertTrue(result.isSuccess());
         assertEquals(1, l.cantidadEvaluaciones());
@@ -214,7 +213,7 @@ class SecctAppTest {
         SecctApp app = appConRepoVacio();
 
         OperationResult result = app.evaluarUnidad("FANTASMA",
-                Paths.get("img.jpg"));
+                "img.jpg", new byte[0]);
 
         assertFalse(result.isSuccess());
     }
@@ -253,9 +252,9 @@ class SecctAppTest {
         OperationResult seleccion = app.seleccionarLote(loteId);
         assertTrue(seleccion.isSuccess());
 
-        assertTrue(app.evaluarUnidad(loteId, Paths.get("t1.jpg")).isSuccess());
-        assertTrue(app.evaluarUnidad(loteId, Paths.get("t2.jpg")).isSuccess());
-        assertTrue(app.evaluarUnidad(loteId, Paths.get("t3.jpg")).isSuccess());
+        assertTrue(app.evaluarUnidad(loteId, "t1.jpg", new byte[0]).isSuccess());
+        assertTrue(app.evaluarUnidad(loteId, "t2.jpg", new byte[0]).isSuccess());
+        assertTrue(app.evaluarUnidad(loteId, "t3.jpg", new byte[0]).isSuccess());
 
         Lote lote = app.listarLotesDisponibles().stream()
                 .filter(l -> l.getId().equals(loteId))
@@ -284,8 +283,8 @@ class SecctAppTest {
         OperationResult seleccion = app.seleccionarLote(loteId);
         assertTrue(seleccion.isSuccess());
 
-        OperationResult eval1 = app.evaluarUnidad(loteId, Paths.get("pez1.jpg"));
-        OperationResult eval2 = app.evaluarUnidad(loteId, Paths.get("pez2.jpg"));
+        OperationResult eval1 = app.evaluarUnidad(loteId, "pez1.jpg", new byte[0]);
+        OperationResult eval2 = app.evaluarUnidad(loteId, "pez2.jpg", new byte[0]);
         assertTrue(eval1.isSuccess());
         assertTrue(eval2.isSuccess());
 
@@ -344,9 +343,9 @@ class SecctAppTest {
         String loteId = app.listarLotesDisponibles().get(0).getId();
 
         app.seleccionarLote(loteId);
-        app.evaluarUnidad(loteId, Paths.get("p1.jpg"));
-        app.evaluarUnidad(loteId, Paths.get("p2.jpg"));
-        app.evaluarUnidad(loteId, Paths.get("p3.jpg"));
+        app.evaluarUnidad(loteId, "p1.jpg", new byte[0]);
+        app.evaluarUnidad(loteId, "p2.jpg", new byte[0]);
+        app.evaluarUnidad(loteId, "p3.jpg", new byte[0]);
 
         OperationResult resultado = app.evaluarLote(loteId);
 

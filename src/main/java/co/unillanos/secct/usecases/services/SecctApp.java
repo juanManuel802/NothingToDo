@@ -7,7 +7,6 @@ import co.unillanos.secct.usecases.ports.ClasificadorCnnPort;
 import co.unillanos.secct.usecases.ports.GeneradorCodigoLotePort;
 import co.unillanos.secct.usecases.ports.LoteRepository;
 
-import java.nio.file.Path;
 import java.util.List;
 
 
@@ -51,8 +50,8 @@ public class SecctApp {
 
     // --- CU-003 Evaluar Unidad ---
 
-    public OperationResult evaluarUnidad(String loteId, Path imagen) {
-        return evaluarUnidadUseCase.execute(loteId, imagen);
+    public OperationResult evaluarUnidad(String loteId, String nombreImagen, byte[] imagen) {
+        return evaluarUnidadUseCase.execute(loteId, nombreImagen, imagen);
     }
 
     // --- CU-004 Evaluar Lote ---

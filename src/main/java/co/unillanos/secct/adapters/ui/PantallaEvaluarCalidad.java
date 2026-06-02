@@ -24,6 +24,8 @@ import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -219,8 +221,23 @@ public class PantallaEvaluarCalidad {
 
     
     private void onEvaluarUnidad() {
-        Path imagen = Paths.get(txtRutaImagen.getText().trim());
-        OperationResult result = app.evaluarUnidad(loteSeleccionadoId, imagen);
+        String rutaTexto = txtRutaImagen.getText().trim();
+        if (rutaTexto.isEmpty()) {
+            mostrarMensaje("Seleccione una imagen antes de evaluar.");
+            return;
+        }
+        Path path = Paths.get(rutaTexto);
+        byte[] contenido;
+        try {
+            contenido = Files.readAllBytes(path);
+        } catch (IOException e) {
+            mostrarMensaje("Error al leer la imagen: " + e.getMessage());
+            return;
+        }
+        String nombre = path.getFileName() != null
+                ? path.getFileName().toString()
+                : path.toString();
+        OperationResult result = app.evaluarUnidad(loteSeleccionadoId, nombre, contenido);
         if (result.isSuccess()) {
             txtRutaImagen.clear();
             cargarLotesEnLista();

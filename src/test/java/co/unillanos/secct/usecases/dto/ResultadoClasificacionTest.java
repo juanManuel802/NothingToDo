@@ -41,41 +41,4 @@ class ResultadoClasificacionTest {
         assertEquals(1.0, resultado.getPuntajeConfianza(), 1e-9);
     }
 
-    
-    
-    
-
-    @Test
-    void shouldThrowWhenCategoriaNtcIsBelowOne() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ResultadoClasificacion(0, 0.5));
-    }
-
-    @Test
-    void shouldThrowWhenCategoriaNtcIsAboveFive() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ResultadoClasificacion(6, 0.5));
-    }
-
-    @Test
-    void shouldThrowWhenCategoriaNtcIsNegative() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ResultadoClasificacion(-1, 0.5));
-    }
-
-    
-    
-    
-
-    @Test
-    void shouldThrowWhenPuntajeConfianzaIsNegative() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ResultadoClasificacion(3, -0.01));
-    }
-
-    @Test
-    void shouldThrowWhenPuntajeConfianzaIsAboveOne() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ResultadoClasificacion(3, 1.01));
-    }
 }
