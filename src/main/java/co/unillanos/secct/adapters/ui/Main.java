@@ -87,9 +87,9 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-    // Levanta el clasificador real si se pasa -Dcnn.url=http://host:puerto; de lo contrario usa el fake.
+    // Levanta el clasificador real si CNN_URL está definida en el entorno; de lo contrario usa el fake.
     private static ClasificadorCnnPort construirClasificador() {
-        String url = System.getProperty("cnn.url");
+        String url = System.getenv("CNN_URL");
         if (url != null && !url.isBlank()) {
             return new ClasificadorCnnHttp(url);
         }

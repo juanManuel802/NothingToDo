@@ -76,7 +76,7 @@ notify-send "SECCT" "Servicio listo. Abriendo aplicación..." \
 # ── Lanzar aplicación Java/JavaFX ────────────────────────────────────────────
 
 cd "$PROJECT"
-mvn -q javafx:run
+CNN_URL=http://localhost:8000 mvn -q javafx:run
 
 # ── Apagar servicio Python al cerrar la app ───────────────────────────────────
 

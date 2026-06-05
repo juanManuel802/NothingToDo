@@ -22,7 +22,9 @@ public class ClasificadorCnnHttp implements ClasificadorCnnPort {
     private final HttpClient httpClient;
 
     public ClasificadorCnnHttp(String baseUrl) {
-        this(baseUrl, HttpClient.newHttpClient());
+        this(baseUrl, HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .build());
     }
 
     public ClasificadorCnnHttp(String baseUrl, HttpClient httpClient) {

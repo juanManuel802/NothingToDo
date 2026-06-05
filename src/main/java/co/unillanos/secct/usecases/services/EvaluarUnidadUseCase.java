@@ -43,7 +43,12 @@ public class EvaluarUnidadUseCase {
                             + "/" + lote.getNumeroUnidadesMuestra() + ").");
         }
 
-        List<ResultadoClasificacion> resultados = clasificador.clasificar(imagen);
+        List<ResultadoClasificacion> resultados;
+        try {
+            resultados = clasificador.clasificar(imagen);
+        } catch (Exception e) {
+            return OperationResult.fail("Error al clasificar la imagen: " + e.getMessage());
+        }
 
         StringBuilder detalle = new StringBuilder();
         for (ResultadoClasificacion resultado : resultados) {
