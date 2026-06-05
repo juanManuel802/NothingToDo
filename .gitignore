@@ -1,3 +1,6 @@
+models/
+*.h5
+
 # Compiled class file
 *.class
 

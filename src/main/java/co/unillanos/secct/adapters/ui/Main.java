@@ -1,9 +1,11 @@
 package co.unillanos.secct.adapters.ui;
 
 import atlantafx.base.theme.NordLight;
+import co.unillanos.secct.infrastructure.repositories.ClasificadorCnnHttp;
 import co.unillanos.secct.infrastructure.repositories.FakeClasificadorCnn;
 import co.unillanos.secct.infrastructure.repositories.GeneradorCodigoLoteSecuencial;
 import co.unillanos.secct.infrastructure.repositories.InMemoryLoteRepository;
+import co.unillanos.secct.usecases.ports.ClasificadorCnnPort;
 import co.unillanos.secct.usecases.services.SecctApp;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -26,7 +28,7 @@ public class Main extends Application {
         Application.setUserAgentStylesheet(new NordLight().getUserAgentStylesheet());
 
         InMemoryLoteRepository repo = new InMemoryLoteRepository();
-        FakeClasificadorCnn    cnn  = new FakeClasificadorCnn();
+        ClasificadorCnnPort cnn = construirClasificador();
         GeneradorCodigoLoteSecuencial gen = new GeneradorCodigoLoteSecuencial();
         SecctApp app = new SecctApp(repo, cnn, gen);
         new InicializadorDatos(app).cargar();
@@ -83,6 +85,15 @@ public class Main extends Application {
         primaryStage.setMinHeight(580);
         primaryStage.setResizable(true);
         primaryStage.show();
+    }
+
+    // Levanta el clasificador real si se pasa -Dcnn.url=http://host:puerto; de lo contrario usa el fake.
+    private static ClasificadorCnnPort construirClasificador() {
+        String url = System.getProperty("cnn.url");
+        if (url != null && !url.isBlank()) {
+            return new ClasificadorCnnHttp(url);
+        }
+        return new FakeClasificadorCnn();
     }
 
     public static void main(String[] args) {

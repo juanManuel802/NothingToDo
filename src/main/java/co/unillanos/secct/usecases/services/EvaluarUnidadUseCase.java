@@ -7,6 +7,7 @@ import co.unillanos.secct.usecases.dto.ResultadoClasificacion;
 import co.unillanos.secct.usecases.ports.ClasificadorCnnPort;
 import co.unillanos.secct.usecases.ports.LoteRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 
@@ -42,17 +43,22 @@ public class EvaluarUnidadUseCase {
                             + "/" + lote.getNumeroUnidadesMuestra() + ").");
         }
 
-        ResultadoClasificacion resultado = clasificador.clasificar(imagen);
+        List<ResultadoClasificacion> resultados = clasificador.clasificar(imagen);
 
-        Evaluacion evaluacion = new Evaluacion(nombreImagen, resultado.getCategoriaNtc(), lote);
-        lote.registrarEvaluacion(evaluacion);
+        StringBuilder detalle = new StringBuilder();
+        for (ResultadoClasificacion resultado : resultados) {
+            Evaluacion evaluacion = new Evaluacion(nombreImagen, resultado.getCategoriaNtc(), lote);
+            lote.registrarEvaluacion(evaluacion);
+            detalle.append(resultado.getParte())
+                   .append(": categoría ").append(resultado.getCategoriaNtc())
+                   .append(" (confianza ").append(resultado.getPuntajeConfianza()).append("); ");
+        }
         loteRepository.save(lote);
 
         return OperationResult.ok(
-                "Unidad evaluada. Imagen: " + nombreImagen
-                        + ". Categoría NTC: " + resultado.getCategoriaNtc()
-                        + ". Confianza: " + resultado.getPuntajeConfianza()
-                        + ". Evaluadas: " + lote.cantidadEvaluaciones()
+                "Unidad evaluada. Imagen: " + nombreImagen + ". "
+                        + detalle
+                        + "Evaluadas: " + lote.cantidadEvaluaciones()
                         + "/" + lote.getNumeroUnidadesMuestra() + ".");
     }
 }

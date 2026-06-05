@@ -2,10 +2,10 @@ package co.unillanos.secct.usecases.services;
 
 import co.unillanos.secct.entities.CodigoLote;
 import co.unillanos.secct.entities.EstadoLote;
-
 import co.unillanos.secct.entities.Evaluacion;
 import co.unillanos.secct.entities.FechaCaptura;
 import co.unillanos.secct.entities.Lote;
+import co.unillanos.secct.entities.PartePez;
 import co.unillanos.secct.entities.PesoLote;
 import co.unillanos.secct.entities.PuntoEvaluacion;
 import co.unillanos.secct.usecases.dto.OperationResult;
@@ -77,15 +77,15 @@ class EvaluarUnidadUseCaseTest {
     }
 
     private ClasificadorCnnPort clasificadorFijo(int categoria, double confianza) {
-        return imagen -> new ResultadoClasificacion(categoria, confianza);
+        return imagen -> List.of(new ResultadoClasificacion(PartePez.OJO, categoria, confianza));
     }
 
     private static class CapturingClasificador implements ClasificadorCnnPort {
         byte[] imagenRecibida = null;
 
-        public ResultadoClasificacion clasificar(byte[] imagen) {
+        public List<ResultadoClasificacion> clasificar(byte[] imagen) {
             this.imagenRecibida = imagen;
-            return new ResultadoClasificacion(3, 0.9);
+            return List.of(new ResultadoClasificacion(PartePez.OJO, 3, 0.9));
         }
     }
 
