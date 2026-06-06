@@ -1,6 +1,6 @@
 package co.unillanos.secct.infrastructure.repositories;
 
-import co.unillanos.secct.entities.PartePez;
+import co.unillanos.secct.usecases.dto.PartePez;
 import co.unillanos.secct.usecases.dto.ResultadoClasificacion;
 import com.sun.net.httpserver.HttpServer;
 import org.junit.jupiter.api.AfterEach;

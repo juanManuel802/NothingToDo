@@ -50,14 +50,19 @@ public class EvaluarUnidadUseCase {
             return OperationResult.fail("Error al clasificar la imagen: " + e.getMessage());
         }
 
+        int categoriaFinal = resultados.stream()
+                .mapToInt(ResultadoClasificacion::getCategoriaNtc)
+                .max()
+                .orElseThrow(() -> new IllegalStateException("El clasificador no devolvió resultados."));
+
         StringBuilder detalle = new StringBuilder();
-        for (ResultadoClasificacion resultado : resultados) {
-            Evaluacion evaluacion = new Evaluacion(nombreImagen, resultado.getCategoriaNtc(), lote);
-            lote.registrarEvaluacion(evaluacion);
-            detalle.append(resultado.getParte())
-                   .append(": categoría ").append(resultado.getCategoriaNtc())
-                   .append(" (confianza ").append(resultado.getPuntajeConfianza()).append("); ");
+        for (ResultadoClasificacion r : resultados) {
+            detalle.append(r.getParte())
+                   .append(": categoría ").append(r.getCategoriaNtc())
+                   .append(" (confianza ").append(r.getPuntajeConfianza()).append("); ");
         }
+
+        lote.registrarEvaluacion(new Evaluacion(nombreImagen, categoriaFinal, lote));
         loteRepository.save(lote);
 
         return OperationResult.ok(

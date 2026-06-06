@@ -1,6 +1,6 @@
 package co.unillanos.secct.usecases.dto;
 
-import co.unillanos.secct.entities.PartePez;
+import co.unillanos.secct.usecases.dto.PartePez;
 
 
 public final class ResultadoClasificacion {

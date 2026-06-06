@@ -8,8 +8,10 @@ import co.unillanos.secct.entities.FechaCaptura;
 import co.unillanos.secct.entities.Lote;
 import co.unillanos.secct.entities.PesoLote;
 import co.unillanos.secct.entities.PuntoEvaluacion;
-import co.unillanos.secct.infrastructure.repositories.FakeClasificadorCnn;
+import co.unillanos.secct.usecases.dto.PartePez;
 import co.unillanos.secct.infrastructure.repositories.GeneradorCodigoLoteSecuencial;
+import co.unillanos.secct.usecases.dto.ResultadoClasificacion;
+import co.unillanos.secct.usecases.ports.ClasificadorCnnPort;
 import co.unillanos.secct.infrastructure.repositories.InMemoryLoteRepository;
 import co.unillanos.secct.usecases.dto.DatosNuevoLote;
 import co.unillanos.secct.usecases.dto.OperationResult;
@@ -40,17 +42,20 @@ class SecctAppTest {
 
     // ------- helpers -------
 
+    private static final ClasificadorCnnPort CNN_STUB =
+            imagen -> List.of(new ResultadoClasificacion(PartePez.OJO, 3, 0.90));
+
     private SecctApp appConRepoVacio() {
         return new SecctApp(
                 new InMemoryLoteRepository(),
-                new FakeClasificadorCnn(),
+                CNN_STUB,
                 new GeneradorCodigoLoteSecuencial());
     }
 
     private SecctApp appConLote(Lote l) {
         return new SecctApp(
                 new InMemoryLoteRepository(Arrays.asList(l)),
-                new FakeClasificadorCnn(),
+                CNN_STUB,
                 new GeneradorCodigoLoteSecuencial());
     }
 
@@ -151,7 +156,7 @@ class SecctAppTest {
 
         InMemoryLoteRepository repo = new InMemoryLoteRepository(
                 Arrays.asList(disponible, agotado));
-        SecctApp app = new SecctApp(repo, new FakeClasificadorCnn(),
+        SecctApp app = new SecctApp(repo, CNN_STUB,
                 new GeneradorCodigoLoteSecuencial());
 
         List<Lote> lista = app.listarLotesDisponibles();

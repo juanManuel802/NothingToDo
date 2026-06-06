@@ -2,7 +2,6 @@ package co.unillanos.secct.adapters.ui;
 
 import atlantafx.base.theme.NordLight;
 import co.unillanos.secct.infrastructure.repositories.ClasificadorCnnHttp;
-import co.unillanos.secct.infrastructure.repositories.FakeClasificadorCnn;
 import co.unillanos.secct.infrastructure.repositories.GeneradorCodigoLoteSecuencial;
 import co.unillanos.secct.infrastructure.repositories.InMemoryLoteRepository;
 import co.unillanos.secct.usecases.ports.ClasificadorCnnPort;
@@ -87,13 +86,13 @@ public class Main extends Application {
         primaryStage.show();
     }
 
-    // Levanta el clasificador real si CNN_URL está definida en el entorno; de lo contrario usa el fake.
     private static ClasificadorCnnPort construirClasificador() {
         String url = System.getenv("CNN_URL");
         if (url != null && !url.isBlank()) {
             return new ClasificadorCnnHttp(url);
         }
-        return new FakeClasificadorCnn();
+        throw new IllegalStateException(
+                "CNN_URL no está definida. Arranca la aplicación con iniciar_secct.sh.");
     }
 
     public static void main(String[] args) {

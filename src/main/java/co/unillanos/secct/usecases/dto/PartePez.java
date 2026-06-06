@@ -1,4 +1,4 @@
-package co.unillanos.secct.entities;
+package co.unillanos.secct.usecases.dto;
 
 public enum PartePez {
     OJO,
