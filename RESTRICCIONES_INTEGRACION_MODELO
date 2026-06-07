@@ -1,0 +1,120 @@
+# Restricciones de integración del modelo — SECCT
+
+Este documento describe lo que el modelo **debe** cumplir para funcionar en este sistema. Cómo se entrena, qué arquitectura se usa y cómo se organiza el dataset son decisiones libres del equipo de ML, siempre que se respeten los puntos aquí descritos.
+
+---
+
+## 1. Archivo del modelo
+
+El script de arranque (`iniciar_secct.sh`) busca el modelo en esta ruta exacta:
+
+```
+models/modelo_entrenado.h5
+```
+
+El archivo debe estar en formato HDF5 y guardado con `model.save("modelo_entrenado.h5")`. Si la ruta o el formato no coinciden, el sistema no arranca.
+
+---
+
+## 2. Preprocesamiento de entrada — debe ser idéntico al del servicio
+
+Java envía la imagen como bytes en base64. El servicio Python la procesa así antes de pasarla al modelo:
+
+```python
+img = Image.open(io.BytesIO(imagen_bytes)).convert("RGB").resize((224, 224))
+arr = np.expand_dims(np.array(img, dtype=np.float32) / 255.0, axis=0)
+preds = model.predict(arr)
+```
+
+El modelo recibe un tensor de forma `(1, 224, 224, 3)` con valores en `[0.0, 1.0]`.
+
+**El pipeline de entrenamiento debe aplicar exactamente el mismo preprocesamiento.** Cualquier diferencia — otra normalización, otro orden de canales, otro tamaño de entrada — produce un modelo que puntúa bien en entrenamiento pero falla en producción sin dar ningún error visible.
+
+---
+
+## 3. Forma y semántica de la salida
+
+La capa de salida del modelo debe cumplir:
+
+
+
+| Requisito | Valor |
+|--------------|---------|
+| Forma del tensor de salida | `(1, N)`, con N ≥ 2 |
+| Rango de cada neurona | `[0.0, 1.0]` |
+| Activación de salida | **sigmoid** (no softmax) |
+| Índice 0 | Score del **OJO** |
+| Índice 1 | Score de la **PIEL** |
+
+**Por qué sigmoid y no softmax:** cada parte se evalúa de forma independiente. Softmax haría que los scores compitan entre sí sumando 1, lo cual no tiene sentido semántico aquí.
+
+El orden de los índices está escrito directamente en `servicio_inferencia.py` (líneas 96–99). No hay ningún mecanismo de auto-detección; si el índice 0 no es OJO, las categorías quedan invertidas sin que el sistema lo detecte.
+
+---
+
+## 4. Etiquetas de entrenamiento — conversión NTC a score
+
+El servicio convierte el score del modelo a categoría NTC con:
+
+```python
+categoria_ntc = max(1, min(5, ceil(score * 5)))
+```
+
+Para que el modelo aprenda a producir scores coherentes con esa fórmula, las etiquetas de entrenamiento deben usar la inversa exacta:
+
+```python
+score = (categoria - 1) / 4.0
+```
+
+| Categoría NTC | Score de entrenamiento |
+|:--------------------:|:---------------------------------:|
+| 1 (muy fresco)  |                 0.00                 |
+|            2            |                 0.25                 |
+|            3            |                 0.50                 |
+|            4            |                 0.75                 |
+|     5 (no apto)    |                 1.00                 |
+
+Cada parte (ojo, piel) se etiqueta de forma independiente. Un pez puede tener ojo en categoría 1 y piel en categoría 4.
+
+---
+
+## 5. Qué hace el servicio con la salida (referencia)
+
+Para que quede claro qué procesa el sistema y qué no:
+
+- El servicio transforma los scores a categorías NTC (fórmula del punto 4).
+- El servicio construye la respuesta JSON que Java parsea:
+  ```json
+  {
+    "partes": [
+      { "parte": "OJO",  "categoria_ntc": 3, "confianza": 0.5 },
+      { "parte": "PIEL", "categoria_ntc": 1, "confianza": 0.08 }
+    ]
+  }
+  ```
+- Java interpreta el campo `"parte"` usando `PartePez.valueOf(...)`. Los strings válidos son exactamente los nombres del enum Java: `OJO` y `PIEL`.
+
+El modelo no interactúa con nada de esto directamente. Solo produce el tensor numérico; el servicio hace el resto.
+
+---
+
+## 6. Nota técnica de compatibilidad (TF 2.21 / Keras 3)
+
+El entorno validado es Python 3.13 con TensorFlow 2.21 (que incluye Keras 3). El servicio ya tiene los siguientes ajustes al cargar el modelo:
+
+- **`compile=False`**: se omite el optimizador y la función de pérdida al cargar. Esto significa que si el `.h5` fue guardado con Keras 2, no hay problema de deserialización. También significa que el modelo se usa solo para inferencia; no se necesita compilar.
+- **`DepthwiseConv2D` con argumento `groups`**: el servicio incluye una subclase de compatibilidad que elimina ese argumento antes de construir la capa. Si la arquitectura elegida usa `DepthwiseConv2D` (presente en MobileNet y variantes), este fix ya la cubre.
+
+No es necesario hacer nada especial al guardar el modelo para que estos ajustes funcionen.
+
+---
+
+## 7. Agregar partes futuras
+Si el nuevo modelo evalúa más partes:
+
+1. Añadir neuronas a la capa de salida: `Dense(3, activation="sigmoid")` para tres partes, etc.
+2. Añadir el valor correspondiente al enum `PartePez` en Java (`src/main/java/.../PartePez.java`).
+3. Actualizar `servicio_inferencia.py` para incluir el nuevo índice en la lista `partes` de la respuesta.
+
+El resto del sistema (Java, script de arranque, lógica de evaluación) no necesita cambios.
+
